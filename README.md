@@ -4,6 +4,8 @@ storm demo using clojure
 
 ## Installation
 
+install [leiningem](https://github.com/technomancy/leiningen) first.
+
 $ git clone git@github.com:baijian/storm-clojure
 
 ## Usage
