@@ -1,9 +1,12 @@
-(defproject storm-clojure "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
-  :license {:name "Eclipse Public License"
+(defproject com.snda.meiyu/AlogCount "0.1.0-SNAPSHOT"
+  :description "Write some topologies using clojure language"
+  :url "http://baijian.github.io/storm-clojure"
+  :license {:name "Eclipse Public License - v 1.0"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
-  :dependencies [[org.clojure/clojure "1.5.1"]]
-  :main ^:skip-aot storm-clojure.core
+  :min-lein-version "2.0.0"
+  :dependencies [[org.clojure/clojure "1.5.1"]
+                 [org.clojure/tools.logging "0.2.6"]]
+  :main com.snda.meiyu.AlogCount
+  :aot [com.snda.meiyu.AlogCount]
   :target-path "target/%s"
-  :profiles {:uberjar {:aot :all}})
+  :profiles {:dev {:dependencies [[storm "0.8.2"]]}})
