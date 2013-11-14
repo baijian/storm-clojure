@@ -38,10 +38,18 @@
               (reset! urls (sync-url))))
         (let [alog (.getString tuple 0)]
           ;regex pattern to emit
-          (emit-bolt! collector [word (@counts word)]:anchor tuple)
-          (ack! collector tuple)
-          )
-        ))))
+          (if (> (count urls) 0) (
+            (let [timestamp (get (.split alog " ") 4) 
+                  timestamp_format (str (get (.split timestamp ".") 0) (get (.split timestamp ".") 1))
+                  status (get (.split alog " ") 5)
+                  url (get (.split alog) 12)
+                  request (get (.split alog) 13)]
+              (let [method (get (.split request " ") 0)
+                    uri (get (.split request " ") 1)
+                    uril (str url "?" uri)]
+                (if (contains? urls uril)
+                  (do (emit-bolt! collector [(get urls uril) timestamp_format]:anchor tuple)
+                      (ack! collector tuple))))))))))))
 
 (defbolt countBolt {:prepare true}
   [conf context collector]
@@ -119,6 +127,4 @@
   (let [urls (atom {})]
     (with-connection db
       with-query-results rs ['select id,url,uri from alog_url']
-        (doseq [row rs] (swap! urls assoc {(row :id) (str (row :url) "?" (row :uri))}))))
-
-
+        (doseq [row rs] (swap! urls assoc {(str (row :url) "?" (row :uri)) (row :id)}))))
