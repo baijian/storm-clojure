@@ -5,6 +5,7 @@
   (:use '[clojure.tools.logging :only (info debug error)])
   (:use 'clj-time.core)
   (:use 'clj-time.coerce)
+  (:use 'clj-time.local)
   (:require [clojure.contrib.sql :as sql])
   (:gen-class))
 
@@ -21,16 +22,26 @@
           ;; ack
           ))))
 
-(defbolt filterUriBolt ["url_id", "alog_time"] {:prepare true}
+(defbolt filterUriBolt ["url_id", "alog_timestamp"] {:prepare true}
   [conf context collector]
-  (let [counts (atom {})]
+  ; urls format : xxx.oo.com?/a/b/c
+  (let [urls (atom {}) timestamp_record (atom 0)]
     (bolt
       (execute [tuple]
-        (let [word (.getString tuple 0)]
-          (swap! counts (partial merge-with +){word 1})
+        ;init timestamp_record
+        (if (= 0 timestamp_record)
+          (do (reset! timestamp_record (to-long (local-now)))
+              (reset! urls (sync-url))))
+        ;every 3 miniutes to update uris have registered
+        (if (> (- (to-long (local-now)) 180000000) timestamp_record)
+          (do (reset! timestamp_record (to-long (local-now)))
+              (reset! urls (sync-url))))
+        (let [alog (.getString tuple 0)]
+          ;regex pattern to emit
           (emit-bolt! collector [word (@counts word)]:anchor tuple)
           (ack! collector tuple)
-          )))))
+          )
+        ))))
 
 (defbolt countBolt {:prepare true}
   [conf context collector]
@@ -102,4 +113,12 @@
 (defn insert-count [url_id url_time url_count]
   (with-connection db
     (sql/insert-values :alog_count [:url_id :time :count] [url_id, url_time, url_count])))
+
+(defn sync-url
+  "sync urls have registered"
+  (let [urls (atom {})]
+    (with-connection db
+      with-query-results rs ['select id,url,uri from alog_url']
+        (doseq [row rs] (swap! urls assoc {(row :id) (str (row :url) "?" (row :uri))}))))
+
 
