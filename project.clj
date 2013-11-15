@@ -9,7 +9,10 @@
                  [org.clojure/java.jdbc "0.3.0-beta1"]
                  [mysql/mysql-connector-java "5.1.6"]
                  [clj-time "0.6.0"]
-                 [org.clojure/tools.logging "0.2.6"]]
+                 [org.clojure/tools.logging "0.2.6"]
+                 [org.zmq/jzmq "2.2.2"]
+                 [org.clojars.mikejs/clojure-zmq "2.0.7-SNAPSHOT"]]
+  :native-path "/usr/local/lib"
   :main com.snda.meiyu.AlogCount
   :aot [com.snda.meiyu.AlogCount]
   :target-path "target/%s"

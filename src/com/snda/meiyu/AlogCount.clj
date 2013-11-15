@@ -6,21 +6,30 @@
   (:use 'clj-time.core)
   (:use 'clj-time.coerce)
   (:use 'clj-time.local)
+  (:use 'org.zeromq.clojure)
   (:require [clojure.contrib.sql :as sql])
   (:gen-class))
 
-(defspout alogSpout
+(def ctx (ZMQ/context))
+(defn datain
+  []
+  (let [rcv (.socket ctx ZMQ/PULL)]
+    (.connect rcv "tcp://127.0.0.1:6000")
+    (while :true
+      (let ))))
+
+(defspout alogSpout ["log_string"]
   [conf context collector]
-    (let [sentences ["hello"
-                     "world"]]
+    (def ctx (ZMQ/context))
+    (let [rcv (.socket ctx ZMQ/PULL)]
+      (.connect rcv "tcp://127.0.0.1:6000")
       (spout
         (nextTuple []
-          (Thread/sleep 100)
-          (emit-spout! collector [(rand-nth sentences)])
-          )
-        (ack [id]
-          ;; ack
-          ))))
+          (while :true
+            (let [log-msg (String. (.recv rcv))
+                  interval 1]
+              (Thread/sleep interval)
+              (emit-spout! collector [log-msg])))))))
 
 (defbolt filterUriBolt ["url_id", "alog_timestamp"] {:prepare true}
   [conf context collector]
@@ -49,7 +58,8 @@
                     uril (str url "?" uri)]
                 (if (contains? urls uril)
                   (do (emit-bolt! collector [(get urls uril) timestamp_format]:anchor tuple)
-                      (ack! collector tuple))))))))))))
+                      ;(ack! collector tuple)
+                    )))))))))))
 
 (defbolt countBolt {:prepare true}
   [conf context collector]
@@ -72,8 +82,8 @@
                   (swap! counter assoc {url_id 0})))
             ;(emit-bolt! collector )
             (swap! counter (partial merge-with +) {url_id 1})
-            (ack! collector tuple))
-        )))))
+            ;(ack! collector tuple)
+            ))))))
 
 (defn mk-topology []
   (topology
@@ -128,3 +138,4 @@
     (with-connection db
       with-query-results rs ['select id,url,uri from alog_url']
         (doseq [row rs] (swap! urls assoc {(str (row :url) "?" (row :uri)) (row :id)}))))
+
