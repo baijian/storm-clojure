@@ -10,14 +10,6 @@
   (:require [clojure.contrib.sql :as sql])
   (:gen-class))
 
-(def ctx (ZMQ/context))
-(defn datain
-  []
-  (let [rcv (.socket ctx ZMQ/PULL)]
-    (.connect rcv "tcp://127.0.0.1:6000")
-    (while :true
-      (let ))))
-
 (defspout alogSpout ["log_string"]
   [conf context collector]
     (def ctx (ZMQ/context))
