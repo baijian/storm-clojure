@@ -1,12 +1,12 @@
 (ns com.snda.meiyu.AlogCount
   (:import 
-    '(backtype.storm StormSubmitter LocalCluster))
-  (:use '[backtype.storm clojure config])
-  (:use '[clojure.tools.logging :only (info debug error)])
-  (:use 'clj-time.core)
-  (:use 'clj-time.coerce)
-  (:use 'clj-time.local)
-  (:use 'org.zeromq.clojure)
+    (backtype.storm StormSubmitter LocalCluster))
+  (:use [backtype.storm clojure config])
+  (:use [clojure.tools.logging :only (info debug error)])
+  (:use clj-time.core)
+  (:use clj-time.coerce)
+  (:use clj-time.local)
+  (:use org.zeromq.clojure)
   (:require [clojure.contrib.sql :as sql])
   (:gen-class))
 
