@@ -1,14 +1,36 @@
 (ns com.snda.meiyu.AlogCount
-  (:import 
-    (backtype.storm StormSubmitter LocalCluster))
+  (:import [backtype.storm StormSubmitter LocalCluster])
   (:use [backtype.storm clojure config])
   (:use [clojure.tools.logging :only (info debug error)])
-  (:use clj-time.core)
-  (:use clj-time.coerce)
-  (:use clj-time.local)
-  (:use org.zeromq.clojure)
+  (:use 'clj-time.core)
+  (:use 'clj-time.coerce)
+  (:use 'clj-time.local)
+  (:use 'org.zeromq.clojure)
   (:require [clojure.contrib.sql :as sql])
   (:gen-class))
+
+(let [db-host "localhost"
+      db-port 3306
+      db-name "storm"
+      db-user "storm"
+      db-pass "storm"]
+  (def db {:classname "com.mysql.jdbc.Driver"
+           :subprotocol "mysql"
+           :subname (str "//" db-host ":" db-port "/" db-name)
+           :user db-user
+           :password db-pass}))
+
+(defn insert-count [url_id url_time url_count]
+  (with-connection db
+    (sql/insert-values :alog_count [:url_id :time :count] [url_id, url_time, url_count])))
+
+(defn sync-url
+  "sync urls have registered"
+  (let [urls (atom {})]
+    (with-connection db
+      with-query-results rs ['select id,url,uri from alog_url']
+        (doseq [row rs] (swap! urls assoc {(str (row :url) "?" (row :uri)) (row :id)}))))
+
 
 (defspout alogSpout ["log_string"]
   [conf context collector]
@@ -25,20 +47,21 @@
 
 (defbolt filterUriBolt ["url_id", "alog_timestamp"] {:prepare true}
   [conf context collector]
-  ; urls format : xxx.oo.com?/a/b/c
+  ; urls format : xxx.oo.com/a/b/c
   (let [urls (atom {}) timestamp_record (atom 0)]
     (bolt
       (execute [tuple]
-        ;init timestamp_record
+        ; init timestamp_record
         (if (= 0 timestamp_record)
           (do (reset! timestamp_record (to-long (local-now)))
+              ; sync url from mysql
               (reset! urls (sync-url))))
-        ;every 3 miniutes to update uris have registered
+        ; every 3 miniutes to update uris which have registered
         (if (> (- (to-long (local-now)) 180000000) timestamp_record)
           (do (reset! timestamp_record (to-long (local-now)))
               (reset! urls (sync-url))))
         (let [alog (.getString tuple 0)]
-          ;regex pattern to emit
+          ; regex pattern to emit
           (if (> (count urls) 0) (
             (let [timestamp (get (.split alog " ") 4) 
                   timestamp_format (str (get (.split timestamp ".") 0) (get (.split timestamp ".") 1))
@@ -47,10 +70,10 @@
                   request (get (.split alog) 13)]
               (let [method (get (.split request " ") 0)
                     uri (get (.split request " ") 1)
-                    uril (str url "?" uri)]
+                    uril (str url uri)]
                 (if (contains? urls uril)
-                  (do (emit-bolt! collector [(get urls uril) timestamp_format]:anchor tuple)
-                      ;(ack! collector tuple)
+                  (do (emit-bolt! collector [(get urls uril) timestamp_format] :anchor tuple)
+                      (ack! collector tuple)
                     )))))))))))
 
 (defbolt countBolt {:prepare true}
@@ -86,19 +109,18 @@
                     :p 10)
      "3" (bolt-spec {"2" ["url_id"]}
                     countBolt
-                    :p 20)}))
+                    :p 10)}))
 
 (defn run-local! []
   (let [cluster (LocalCluster.)]
     (.submitTopology cluster "AlogCount" {TOPOLOGY-DEBUG true} (mk-topology))
     (Thread/sleep 10000)
-    (.shutdown cluster)
-    ))
+    (.shutdown cluster)))
 
 (defn submit-topology! [name]
   (StormSubmitter/submitTopology
     name
-    {TOPOLOGY-DEBUG true
+    {TOPOLOGY-DEBUG false
      TOPOLOGY-WORKERS 15}
     (mk-topology)))
 
@@ -107,27 +129,3 @@
     (run-local!))
   ([name]
     (submit-topology! name)))
-
-
-(let [db-host "localhost"
-      db-port 3306
-      db-name "storm"
-      db-user "storm"
-      db-pass "storm"]
-  (def db {:classname "com.mysql.jdbc.Driver"
-           :subprotocol "mysql"
-           :subname (str "//" db-host ":" db-port "/" db-name)
-           :user db-user
-           :password db-pass}))
-
-(defn insert-count [url_id url_time url_count]
-  (with-connection db
-    (sql/insert-values :alog_count [:url_id :time :count] [url_id, url_time, url_count])))
-
-(defn sync-url
-  "sync urls have registered"
-  (let [urls (atom {})]
-    (with-connection db
-      with-query-results rs ['select id,url,uri from alog_url']
-        (doseq [row rs] (swap! urls assoc {(str (row :url) "?" (row :uri)) (row :id)}))))
-
