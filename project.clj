@@ -1,4 +1,4 @@
-(defproject com.snda.meiyu/AlogCount "0.1.0-SNAPSHOT"
+(defproject storm-clojure "0.0.1-SNAPSHOT"
   :description "Write some topologies using clojure language"
   :url "http://baijian.github.io/storm-clojure"
   :license {:name "Eclipse Public License - v 1.0"

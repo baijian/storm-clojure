@@ -21,3 +21,5 @@ $ lein deps
 $ lein compile
 
 $ lein run -m "com.baijian.HelloWorld"
+
+$ lein uberjar
