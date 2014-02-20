@@ -1,7 +1,5 @@
 # Introduction to storm-clojure
 
-<!--TODO: write [great documentation](http://jacobian.org/writing/great-documentation/what-to-write/)-->
-
 ## machine config
 
 * zookeeer cluster: storm1 storme2 and storm3

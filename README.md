@@ -1,39 +1,23 @@
 # storm-clojure
 
-storm demo using clojure
+storm demos developing using clojure
 
 ## Installation
 
-install [leiningem](https://github.com/technomancy/leiningen) first.
+Install [leiningem](https://github.com/technomancy/leiningen) first.
+
+Install [storm release](https://github.com/apache/incubator-storm/releases) and set the `bin` directory to you `PATH`.
+
+At last clone this project:
 
 ```
 $ git clone git@github.com:baijian/storm-clojure
 ```
 
-## Usage
-
-storm-clojure: demo
-
-    $ java -jar storm-clojure-0.1.0-standalone.jar [args]
-
-## Options
-
-
 ## Examples
 
-...
+$ lein deps
 
-### Bugs
+$ lein compile
 
-...
-
-### Any Other Sections
-### That You Think
-### Might be Useful
-
-## License
-
-Copyright © 2013 FIXME
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+$ lein run -m "com.baijian.HelloWorld"

@@ -10,10 +10,10 @@
                  [mysql/mysql-connector-java "5.1.6"]
                  [clj-time "0.6.0"]
                  [org.clojure/tools.logging "0.2.6"]
-                 [org.zmq/jzmq "2.2.2"]
+                 [org.zeromq/jzmq "2.2.2-SNAPSHOT"]
                  [org.clojars.mikejs/clojure-zmq "2.0.7-SNAPSHOT"]]
   :native-path "/usr/local/lib"
-  :main com.snda.meiyu.AlogCount
-  :aot [com.snda.meiyu.AlogCount]
+  :main com.baijian.HelloWorld
+  :aot [com.baijian.HelloWorld]
   :target-path "target/%s"
-  :profiles {:dev {:dependencies [[storm "0.8.2"]]}})
+  :profiles {:dev {:dependencies [[storm "0.9.0.1"]]}})
