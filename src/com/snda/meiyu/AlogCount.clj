@@ -6,7 +6,7 @@
   (:use clj-time.coerce)
   (:use clj-time.local)
   (:use org.zeromq.clojure)
-  (:require [clojure.contrib.sql :as sql])
+  (:require [clojure.java.jdbc :as sql])
   (:gen-class))
 
 (let [db-host "localhost"
@@ -22,15 +22,14 @@
 
 (defn insert-count [url_id url_time url_count]
   (with-connection db
-    (sql/insert-values :alog_count [:url_id :time :count] [url_id, url_time, url_count])))
+    (sql/insert! db :alog_acount
+                 {:url_id url_id :time url_time :count url_count})))
 
 (defn sync-url
   "sync urls have registered"
   (let [urls (atom {})]
-    (with-connection db
-      with-query-results rs ['select id,url,uri from alog_url']
-        (doseq [row rs] (swap! urls assoc {(str (row :url) "?" (row :uri)) (row :id)}))))
-
+    (doseq [row (subvec (sql/query db ["select * from alog_url"] :as-arrays? true) 1)]
+      (swap! urls assoc {(str (nth row 2) "?" (nth row 3)) (nth row 0)})))
 
 (defspout alogSpout ["log_string"]
   [conf context collector]

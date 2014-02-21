@@ -1,12 +1,7 @@
 (ns com.baijian.Test
   (:use [clojure.tools.logging :only (info error)])
-  (:require [clojure.contrib.sql :as sql])
+  (:require [clojure.java.jdbc :as sql])
   (:gen-class))
-
-(defn -main [& args]
-  (info "Enter main method")
-  (println "This is my first clojure coding: " args)
-  (info "After print args"))
 
 (let [db-host "localhost"
       db-port 3306
@@ -20,23 +15,37 @@
            :password db-pass}))
 
 (defn insert-user [name age]
-  (sql/with-connection db
-    (sql/insert-values :users [:name :age] [name age])))
+  (sql/insert! db :users 
+               {:name name :age age}))
 
-(defn update-user [id attribute-map]
-  (sql/with-connection db
-    (sql/update-values :users ["id=?" id] attribute-map)))
+(defn update-age [name age]
+  (sql/update! db :users {:age age}
+               ["name = ?" name]))
 
-(defn delete-user [id]
-  (sql/with-connection db
-    (sql/delete-rows :users ["id=?" id])))
+(defn query-user [name]
+  (sql/query db
+             ["select * from users where name = ?" name]
+             :row-fn :age))
 
-(defn prepare-insert-user [name age]
-  (let [sql "insert into storm.users (name, age) values(?, ?)"]
-    (sql/with-connection db
-      (sql/do-prepared sql ["baijian" 12] ))))
+(defn delete-user [name]
+  (sql/delete! db :users
+               ["name = ?" name]))
 
-(defn query-user [id]
-  (sql/with-connection db
-    (sql/with-query-results rs ["select * from users whre id=?" id]
-      (dorun (map #(println %) rs)))))
+(defn query-all []
+  (sql/query db ["select * from users"]
+    :as-arrays? true))
+
+(defn -main [& args]
+  ;(info "Insert baijian 24>>>>>>>>")
+  ;(insert-user "baijian" 24)
+  ;(info "Query baijian>>>>>>>>>>>>")
+  ;(println (query-user "baijian"))
+  ;(info "Update baijian to 25>>>>>")
+  ;(update-age "baijian" 25)
+  ;(info "Query baijian>>>>>>>>>>>>")
+  ;(println (query-user "baijian"))
+  (info "Query all <<<<<<<<<<<<<<<")
+  (doseq [row (subvec (query-all) 1)] (println (nth row 2)))
+  ;(info "Delete baijian>>>>>>>>>>>")
+  ;(delete-user "baijian")
+  (info "End>>>>>>>>>>>>>>>>>>>>>>"))
